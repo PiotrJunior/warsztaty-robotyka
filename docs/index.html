@@ -49,6 +49,9 @@
       Na Windowsie w PowerShellu:
       <pre><code>powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"</code></pre></li>
     <li>Zamknij i otwórz terminal ponownie. Rozpakuj paczkę, wejdź do jej folderu i wpisz <code>uv sync</code>.</li>
+    <li><b>Tylko Ubuntu/Linux:</b> wpisz raz poniższą komendę, a potem zamknij i otwórz terminal. Bez tego okno symulacji
+      może się wysypać z błędem <code>GLib-GIO-ERROR … antialiasing</code>.
+      <pre><code>echo 'export PYGLFW_LIBRARY_VARIANT=x11' >> ~/.bashrc</code></pre></li>
     <li>Sprawdź instalację: <code>uv run python sprawdz_instalacje.py</code> (na macOS: <code>uv run mjpython sprawdz_instalacje.py</code>).
       Na końcu powinno być <b>Wszystko gotowe! :)</b></li>
   </ol>
