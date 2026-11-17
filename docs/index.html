@@ -44,6 +44,8 @@
   <ol>
     <li>Zainstaluj <b>uv</b>. Na Linuksie i macOS w terminalu:
       <pre><code>curl -LsSf https://astral.sh/uv/install.sh | sh</code></pre>
+      Jeśli nie masz <code>curl</code> (np. Ubuntu), użyj <code>wget</code>:
+      <pre><code>wget -qO- https://astral.sh/uv/install.sh | sh</code></pre>
       Na Windowsie w PowerShellu:
       <pre><code>powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"</code></pre></li>
     <li>Zamknij i otwórz terminal ponownie. Rozpakuj paczkę, wejdź do jej folderu i wpisz <code>uv sync</code>.</li>
