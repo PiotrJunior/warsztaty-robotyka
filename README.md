@@ -2,6 +2,8 @@
 
 Symulator fizyki **MuJoCo**, regulatory **PID**, kamery i markery **ArUco** (**OpenCV**), **filtr Kalmana**.
 
+**Strona z wykładami i instrukcją: https://piotrjunior.github.io/warsztaty-robotyka/**
+
 ## Dzień 1: pobierz paczkę
 
 **[⬇ warsztaty-robotyka.zip](https://github.com/PiotrJunior/warsztaty-robotyka/raw/main/warsztaty-robotyka.zip)**

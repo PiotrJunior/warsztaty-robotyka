@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>W2 · MuJoCo od środka</title>
+  <link rel="stylesheet" href="lib/reveal/reset.css">
+  <link rel="stylesheet" href="lib/reveal/reveal.css">
+  <link rel="stylesheet" href="lib/reveal/plugin/highlight/monokai.css">
+  <link rel="stylesheet" href="wspolne/motyw.css">
+</head>
+<body>
+<div class="reveal"><div class="slides">
+
+<!-- ============================================================ 1 -->
+<section class="tytul">
+  <div class="numer">Wykład 2 · Dzień 1</div>
+  <h1>MuJoCo od środka</h1>
+  <div class="podtytul">Jak zbudować robota z klocków i wprawić go w ruch</div>
+</section>
+
+<!-- ============================================================ 2 -->
+<section>
+  <h2>MuJoCo = <span style="color:var(--akcent)">Mu</span>lti-<span style="color:var(--akcent)">Jo</span>int dynamics with <span style="color:var(--akcent)">Co</span>ntact</h2>
+  <div class="kolumny k3">
+    <div class="karta niebieska">
+      <h3>1. Model</h3>
+      <p>Plik <b>XML</b>: z czego zbudowany jest robot i świat. Kształty, masy, przeguby, silniki, czujniki, kamery.</p>
+      <p class="szary bmale">dzien1/z2_ramie.xml</p>
+    </div>
+    <div class="karta akcent">
+      <h3>2. Silnik fizyki</h3>
+      <p>Funkcja <code>mj_step</code>: co się stanie w następnej chwili? Liczy siły, kontakty, ruch.</p>
+      <p class="szary bmale">mujoco.mj_step(model, data)</p>
+    </div>
+    <div class="karta zielona">
+      <h3>3. Podgląd</h3>
+      <p>Okno, w którym widać symulację. Można obracać kamerą, pchać obiekty, ruszać suwakami silników.</p>
+      <p class="szary bmale">python -m mujoco.viewer</p>
+    </div>
+  </div>
+  <div class="odstep"></div>
+  <p class="male szary">Powstał w 2012 r. (Emanuel Todorov), od 2021 r. rozwijany przez Google DeepMind, od 2022 r. darmowy i otwarty.</p>
+</section>
+
+<!-- ============================================================ 3 -->
+<section>
+  <h2>Pierwszy model: spadająca kulka</h2>
+  <div class="kolumny szeroka-lewa srodek">
+    <pre><code class="language-xml" data-trim data-line-numbers="2|3|4|5-8|6|7"><script type="text/template">
+<mujoco>
+  <worldbody>
+    <light pos="0 0 3"/>
+    <geom type="plane" size="2 2 0.1"/>
+    <body pos="0 0 1">
+      <freejoint/>
+      <geom type="sphere" size="0.1" rgba="1 0.3 0.3 1"/>
+    </body>
+  </worldbody>
+</mujoco>
+    </script></code></pre>
+    <div class="male">
+      <ul>
+        <li><code>worldbody</code>: świat, wszystko jest w nim</li>
+        <li><code>light</code>: lampa (inaczej będzie ciemno)</li>
+        <li><code>geom</code> bez ciała: nieruchoma podłoga</li>
+        <li><code>body</code>: ciało, 1 m nad ziemią</li>
+        <li><code>freejoint</code>: może się swobodnie ruszać</li>
+        <li><code>geom</code> w ciele: jego kształt (i masa)</li>
+      </ul>
+      <p class="szary">Jednostki: metry, kilogramy, sekundy, niutony.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 4 -->
+<section>
+  <h2>Robot to drzewo ciał</h2>
+  <div class="kolumny srodek">
+    <div>
+      <svg class="diagram" viewBox="0 0 520 420">
+        <defs><marker id="m4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#5f6b7a"/></marker></defs>
+        <g font-size="20" font-weight="700">
+          <rect x="160" y="10" width="200" height="54" rx="12" fill="#f1f3f5" stroke="#868e96" stroke-width="2"/><text x="260" y="44" text-anchor="middle">świat</text>
+          <rect x="160" y="120" width="200" height="54" rx="12" fill="#f1f3f5" stroke="#343a40" stroke-width="2"/><text x="260" y="154" text-anchor="middle">podstawa</text>
+          <rect x="160" y="230" width="200" height="54" rx="12" fill="#fff4eb" stroke="#e8590c" stroke-width="2.5"/><text x="260" y="264" text-anchor="middle">ramię</text>
+          <rect x="160" y="340" width="200" height="54" rx="12" fill="#e7f5ff" stroke="#1c7ed6" stroke-width="2.5"/><text x="260" y="374" text-anchor="middle">przedramię</text>
+        </g>
+        <g stroke="#5f6b7a" stroke-width="2.5" marker-end="url(#m4)"><path d="M260,64 L260,115"/><path d="M260,174 L260,225"/><path d="M260,284 L260,335"/></g>
+        <g font-size="17" fill="#5f6b7a" font-family="ui-monospace, Menlo, monospace">
+          <text x="275" y="95">(przykręcona)</text><text x="275" y="205">hinge "shoulder"</text><text x="275" y="315">hinge "elbow"</text>
+        </g>
+      </svg>
+    </div>
+    <div>
+      <img src="media/scena_ramie.png" alt="Ramię robota z dwoma przegubami">
+      <p class="male" style="margin-top:10px"><b>Dziecko porusza się razem z rodzicem.</b> Pozycja ciała (<code>pos</code>) jest podawana względem rodzica.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 5 -->
+<section>
+  <h2>Klocki modelu</h2>
+  <div class="kolumny" style="gap:18px">
+    <div class="karta niebieska">
+      <h3><code>geom</code>: kształt</h3>
+      <p><code>sphere</code> <code>box</code> <code>capsule</code> <code>cylinder</code> <code>plane</code> <code>mesh</code></p>
+      <p>Ważne atrybuty: <code>size</code>, <code>pos</code>, <code>rgba</code> (kolor), <code>mass</code>, <code>friction</code>.</p>
+      <p class="szary">Zderzenia liczone są tylko między geomami.</p>
+    </div>
+    <div class="karta akcent">
+      <h3><code>joint</code>: przegub</h3>
+      <table class="bmale" style="font-size:19px">
+        <tr><td><code>hinge</code></td><td>zawias: łokieć, drzwi</td></tr>
+        <tr><td><code>slide</code></td><td>prowadnica: szuflada, nasz chwytak</td></tr>
+        <tr><td><code>ball</code></td><td>kula: bark człowieka</td></tr>
+        <tr><td><code>free</code></td><td>wszystko: piłka, dron</td></tr>
+      </table>
+      <p class="szary" style="margin-top:6px">Ciało bez przegubu jest „przyklejone” do rodzica.</p>
+    </div>
+    <div class="karta zielona">
+      <h3><code>actuator</code>: silnik</h3>
+      <p><code>motor</code>: daje zadaną siłę, tak jak śmigła drona.</p>
+      <p><code>position</code>: serwo, samo dojeżdża do zadanego kąta. W środku to <b>regulator PD</b>!</p>
+      <p class="szary">Sterujemy przez <code>data.ctrl</code>, w zakresie <code>ctrlrange</code>.</p>
+    </div>
+    <div class="karta fioletowa">
+      <h3><code>sensor</code> i <code>camera</code></h3>
+      <p><code>jointpos</code>: kąt przegubu. <code>gyro</code>: prędkość obrotu. <code>accelerometer</code>, <code>framequat</code>: orientacja.</p>
+      <p><code>camera</code>: renderuje obraz, jak prawdziwa kamera (dzień 2!).</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 6 -->
+<section>
+  <h2>Pułapka: stopnie i radiany</h2>
+  <div class="kolumny szeroka-lewa srodek">
+    <pre><code class="language-xml" data-trim><script type="text/template">
+<compiler angle="degree"/>
+...
+<joint name="shoulder" type="hinge" range="-120 120"/>
+...
+<!-- ŹLE: suwak od -120 do 120 RADIANÓW -->
+<position joint="shoulder" kp="100" ctrlrange="-120 120"/>
+
+<!-- DOBRZE: zakres suwaka = zakres przegubu -->
+<position joint="shoulder" kp="100" inheritrange="1"/>
+    </script></code></pre>
+    <div>
+      <p><code>angle="degree"</code> przelicza tylko kąty <b>w modelu</b>.</p>
+      <p>Sterowanie i odczyty (<code>ctrl</code>, <code>qpos</code>, czujniki) są <b>zawsze w radianach</b>.</p>
+      <p class="szary male">180° = π ≈ 3,14 rad</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 7 -->
+<section>
+  <h2><code>MjModel</code> i <code>MjData</code></h2>
+  <div class="kolumny">
+    <div class="karta niebieska">
+      <h3>MjModel: przepis</h3>
+      <p>Wczytany z XML-a. Nie zmienia się w trakcie symulacji.</p>
+      <ul class="male"><li>masy, wymiary, kształty</li><li>przeguby i ich zakresy</li><li>siła silników, <code>kp</code></li><li>krok czasowy <code>opt.timestep</code></li></ul>
+    </div>
+    <div class="karta akcent">
+      <h3>MjData: stan teraz</h3>
+      <p>Zmienia się w każdym kroku.</p>
+      <ul class="male"><li><code>time</code>: czas symulacji</li><li><code>qpos</code>, <code>qvel</code>: położenia i prędkości przegubów</li><li><code>ctrl</code>: komendy dla silników</li><li><code>sensordata</code>: odczyty czujników</li></ul>
+    </div>
+  </div>
+  <p class="srodek-tekst" style="margin-top:18px">Jak w grze planszowej: <b>plansza i zasady</b> (model) oraz <b>gdzie teraz stoją pionki</b> (data).</p>
+</section>
+
+<!-- ============================================================ 8 -->
+<section>
+  <h2>Pętla symulacji</h2>
+  <div>
+    <pre><code class="language-python" data-trim data-line-numbers="1-4|6|7|8|9">
+import mujoco
+
+model = mujoco.MjModel.from_xml_path("dzien1/z2_ramie.xml")
+data = mujoco.MjData(model)
+
+while data.time < 5.0:
+    data.ctrl[0] = 1.0              # DZIAŁAJ: cel dla silnika barku [rad]
+    mujoco.mj_step(model, data)     # fizyka: krok o model.opt.timestep
+    kat = data.qpos[0]              # CZUJ: aktualny kąt barku [rad]
+    </code></pre>
+    <p>To jest pętla <b>czuj → myśl → działaj</b> z wykładu 1.</p>
+    <div class="ramka">Nasz <code>sim.step(...)</code> w zadaniach z dronem robi dokładnie to: ustawia <code>ctrl</code> silników i woła <code>mj_step</code>.</div>
+  </div>
+</section>
+
+<!-- ============================================================ 9 -->
+<section>
+  <h2>Co dzieje się w <code>mj_step</code>?</h2>
+  <div class="kolumny srodek">
+    <div>
+      <ol>
+        <li>Policz <b>siły</b>: grawitacja, silniki, zderzenia, tarcie</li>
+        <li>Z siły policz <b>przyspieszenie</b>: \(a = F/m\)</li>
+        <li>Zmień <b>prędkość</b>: \(v \leftarrow v + a\,\Delta t\)</li>
+        <li>Zmień <b>położenie</b>: \(x \leftarrow x + v\,\Delta t\)</li>
+        <li>Czas: \(t \leftarrow t + \Delta t\), i od nowa</li>
+      </ol>
+    </div>
+    <div class="karta">
+      <p class="wielka-liczba">Δt</p>
+      <p>krok czasowy (<code>timestep</code>)</p>
+      <ul class="male">
+        <li>ramię, chwytak: <b>0,002 s</b> (500 kroków na sekundę)</li>
+        <li>dron: <b>0,01 s</b> (100 kroków na sekundę)</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 10 -->
+<section>
+  <h2>Za duży krok = symulacja wybucha</h2>
+  <div id="demo-krok"></div>
+</section>
+
+<!-- ============================================================ 11 -->
+<section>
+  <h2>Zderzenia i tarcie</h2>
+  <div class="kolumny szeroka-prawa srodek">
+    <ul class="male">
+      <li>Zderzenia w MuJoCo są <b>„miękkie”</b>: ciała mogą minimalnie w siebie wejść, a wtedy odpycha je jakby sprężyna.</li>
+      <li><code>solref</code>: jak twarda i sprężysta jest ta „sprężyna”, czyli czy piłka się odbija</li>
+      <li><code>friction</code>: tarcie (ślizganie, skręcanie, toczenie)</li>
+      <li><code>&lt;option gravity="0 0 -9.81"/&gt;</code>: grawitacja dla całego świata</li>
+    </ul>
+    <div>
+      <img src="media/scena_piaskownica.png" alt="Piaskownica fizyki: wahadło, rampa, kulki">
+      <p class="podpis">Zadanie 1.1: piaskownica fizyki</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 12 -->
+<section>
+  <h2>Okno MuJoCo: ściąga</h2>
+  <table>
+    <tbody>
+      <tr><td style="width:40%"><b>lewy przycisk myszy</b> + przeciąganie</td><td>obrót kamery</td></tr>
+      <tr><td><b>prawy przycisk</b> + przeciąganie</td><td>przesuwanie kamery</td></tr>
+      <tr><td><b>kółko</b></td><td>przybliżanie</td></tr>
+      <tr><td><b>spacja</b></td><td>pauza / start</td></tr>
+      <tr><td><b>Backspace</b></td><td>reset do stanu początkowego</td></tr>
+      <tr><td><b>dwuklik</b> na obiekcie, potem <b>Ctrl</b> + przeciąganie</td><td>pchnięcie lub obrót obiektu</td></tr>
+      <tr><td>prawy panel → <b>Control</b></td><td>suwaki silników</td></tr>
+      <tr><td>lewy panel → <b>Rendering</b></td><td>kamery, przezroczystość, siły kontaktu</td></tr>
+      <tr><td>przeciągnij plik <code>.xml</code> na okno</td><td>wczytaj model ponownie po zmianach</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============================================================ 13 -->
+<section>
+  <h2>Zadania 1.1 – 1.3</h2>
+  <div class="kolumny k3">
+    <div class="karta"><img src="media/scena_piaskownica.png" alt=""><h3 style="margin-top:8px">1.1 Piaskownica</h3><p>Księżyc, tarcie, odbijanie, domino.</p><p class="szary bmale">~10 min</p></div>
+    <div class="karta"><img src="media/scena_ramie.png" alt=""><h3 style="margin-top:8px">1.2 Ramię robota</h3><p>Dodaj przedramię, łokieć i silnik. Zrzuć kulkę ze stołu.</p><p class="szary bmale">~20 min</p></div>
+    <div class="karta"><img src="media/scena_chwytak.png" alt=""><h3 style="margin-top:8px">1.3 Chwytak</h3><p>Zbuduj chwytak z kamerą. Jutro ułoży wieżę!</p><p class="szary bmale">~20 min</p></div>
+  </div>
+  <pre style="margin-top:16px"><code class="language-bash" data-trim>
+uv run python -m mujoco.viewer --mjcf=dzien1/z1_piaskownica.xml
+  </code></pre>
+  <p class="male szary">Opis zadania jest na <b>końcu</b> każdego pliku <code>.xml</code>.</p>
+</section>
+
+</div></div>
+<script src="lib/reveal/reveal.js"></script>
+<script>window.RevealNotes = { id: "notes", init() {} };</script>
+<script src="lib/reveal/plugin/math/math.js"></script>
+<script src="lib/reveal/plugin/highlight/highlight.js"></script>
+<script src="wspolne/slajdy.js"></script>
+<script src="wspolne/dema_mujoco.js"></script>
+<script>
+  Dema.dodaj("#demo-krok", (el) => demoKrok(el));
+  uruchomSlajdy();
+</script>
+</body>
+</html>

@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>W1 · Wstęp do robotyki</title>
+  <link rel="stylesheet" href="lib/reveal/reset.css">
+  <link rel="stylesheet" href="lib/reveal/reveal.css">
+  <link rel="stylesheet" href="lib/reveal/plugin/highlight/monokai.css">
+  <link rel="stylesheet" href="wspolne/motyw.css">
+</head>
+<body>
+<div class="reveal"><div class="slides">
+
+<!-- ============================================================ 1 -->
+<section class="tytul">
+  <div class="numer">Wykład 1 · Dzień 1</div>
+  <h1>Robotyka i symulacje robotów</h1>
+  <div class="podtytul">Jak nauczyć drona latać, zanim go rozbijemy</div>
+</section>
+
+<!-- ============================================================ 2 -->
+<section>
+  <h2>Za 3 dni Wasz kod zrobi to</h2>
+  <video class="film" src="media/dron_kamera.mp4" data-autoplay muted loop playsinline style="max-height:520px; width:auto; margin:0 auto"></video>
+  <p class="podpis">Dron <b>nie ma GPS</b>. Widzi tylko markery na podłodze (podgląd z jego kamery w prawym górnym rogu), a mimo to leci po zadanej trasie.</p>
+</section>
+
+<!-- ============================================================ 3 -->
+<section>
+  <h2>Plan na 3 dni</h2>
+  <div class="kolumny k3">
+    <div class="karta akcent">
+      <span class="tag">Dzień 1</span>
+      <h3 style="margin-top:8px">Fizyka i PID</h3>
+      <img src="media/scena_dron.png" alt="">
+      <ul class="male" style="margin-top:10px">
+        <li>symulator MuJoCo: budujemy roboty</li>
+        <li>regulator PID</li>
+        <li>dron wisi i się nie przewraca</li>
+      </ul>
+    </div>
+    <div class="karta niebieska">
+      <span class="tag n">Dzień 2</span>
+      <h3 style="margin-top:8px">Lot i kamera</h3>
+      <video class="film" src="media/bramki.mp4" data-autoplay muted loop playsinline></video>
+      <ul class="male" style="margin-top:10px">
+        <li>wyścig przez bramki</li>
+        <li>kamery, markery ArUco</li>
+        <li>chwytak buduje wieżę</li>
+      </ul>
+    </div>
+    <div class="karta zielona">
+      <span class="tag z">Dzień 3</span>
+      <h3 style="margin-top:8px">Dron bez GPS</h3>
+      <video class="film" src="media/platforma.mp4" data-autoplay muted loop playsinline></video>
+      <ul class="male" style="margin-top:10px">
+        <li>filtr Kalmana</li>
+        <li>lot na podstawie kamery</li>
+        <li>★ lądowanie na jadącej platformie</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 4 -->
+<section>
+  <h2>Czym jest robot?</h2>
+  <div class="kolumny szeroka-prawa srodek">
+    <div>
+      <p class="duze">Maszyna, która <em>sama</em> zamyka pętlę:</p>
+      <p class="duze">czuj → myśl → działaj</p>
+      <div class="odstep"></div>
+      <p class="male szary">…i robi to dziesiątki lub setki razy na sekundę. Nasz dron: <b>100 razy na sekundę</b>.</p>
+    </div>
+    <svg class="diagram" viewBox="0 0 700 430">
+      <defs>
+        <marker id="g1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#1d2433"/></marker>
+      </defs>
+      <rect x="20" y="20" width="250" height="150" rx="16" fill="#e7f5ff" stroke="#1c7ed6" stroke-width="3"/>
+      <text x="145" y="60" text-anchor="middle" font-size="28" font-weight="800" fill="#1c7ed6">CZUJ</text>
+      <text x="145" y="95" text-anchor="middle" font-size="19">kamera, żyroskop,</text>
+      <text x="145" y="120" text-anchor="middle" font-size="19">akcelerometr, GPS,</text>
+      <text x="145" y="145" text-anchor="middle" font-size="19">czujniki w przegubach</text>
+      <rect x="430" y="20" width="250" height="150" rx="16" fill="#fff4eb" stroke="#e8590c" stroke-width="3"/>
+      <text x="555" y="60" text-anchor="middle" font-size="28" font-weight="800" fill="#e8590c">MYŚL</text>
+      <text x="555" y="95" text-anchor="middle" font-size="19">Gdzie jestem?</text>
+      <text x="555" y="120" text-anchor="middle" font-size="19">Co mam zrobić?</text>
+      <text x="555" y="145" text-anchor="middle" font-size="19">(estymacja, regulator)</text>
+      <rect x="225" y="260" width="250" height="150" rx="16" fill="#ebfbee" stroke="#2b8a3e" stroke-width="3"/>
+      <text x="350" y="300" text-anchor="middle" font-size="28" font-weight="800" fill="#2b8a3e">DZIAŁAJ</text>
+      <text x="350" y="335" text-anchor="middle" font-size="19">silniki, śmigła,</text>
+      <text x="350" y="360" text-anchor="middle" font-size="19">chwytak, koła</text>
+      <path d="M275,95 L425,95" stroke="#1d2433" stroke-width="3" fill="none" marker-end="url(#g1)"/>
+      <path d="M555,175 Q555,330 480,335" stroke="#1d2433" stroke-width="3" fill="none" marker-end="url(#g1)"/>
+      <path d="M220,335 Q145,330 145,175" stroke="#1d2433" stroke-width="3" fill="none" marker-end="url(#g1)"/>
+      <text x="80" y="290" text-anchor="middle" font-size="18" fill="#5f6b7a">świat się</text>
+      <text x="80" y="312" text-anchor="middle" font-size="18" fill="#5f6b7a">zmienia</text>
+    </svg>
+  </div>
+</section>
+
+<!-- ============================================================ 5 -->
+<section>
+  <h2>Roboty dookoła nas</h2>
+  <div class="kolumny k3">
+    <div class="karta"><div class="ikona">🏭</div><h3>Fabryki</h3><p>Ramiona spawają, malują i składają samochody. Na świecie pracuje ich ponad 4 miliony.</p></div>
+    <div class="karta"><div class="ikona">📦</div><h3>Magazyny</h3><p>Roboty jeżdżące pod regałami przywożą towar do pakowacza.</p></div>
+    <div class="karta"><div class="ikona">🚁</div><h3>Drony</h3><p>Filmowanie, inspekcje mostów i linii energetycznych, rolnictwo, dostawy.</p></div>
+    <div class="karta"><div class="ikona">🐕</div><h3>Chodzące</h3><p>Roboty czworonożne i humanoidy uczą się chodzić… głównie w symulacji.</p></div>
+    <div class="karta"><div class="ikona">🪐</div><h3>Kosmos</h3><p>Łaziki na Marsie i helikopter Ingenuity, który wykonał tam 72 loty.</p></div>
+    <div class="karta"><div class="ikona">🧹</div><h3>W domu</h3><p>Odkurzacze i kosiarki automatyczne: czują przeszkody i same planują trasę.</p></div>
+  </div>
+</section>
+
+<!-- ============================================================ 6 -->
+<section class="pytanie">
+  <p class="duze">Jak nauczyć robota latać,<br>nie rozbijając stu dronów?</p>
+</section>
+
+<!-- ============================================================ 7 -->
+<section>
+  <h2>Po co symulacja?</h2>
+  <div class="kolumny k3">
+    <div class="karta akcent"><h3>💸 Tanio</h3><p>Rozbity dron w symulacji kosztuje jedno kliknięcie „od nowa”.</p></div>
+    <div class="karta akcent"><h3>🛡️ Bezpiecznie</h3><p>Nikt nie dostanie śmigłem, nic się nie zapali.</p></div>
+    <div class="karta akcent"><h3>⏩ Szybciej niż naprawdę</h3><p>Nasz dron liczy się ok. <b>500×</b> szybciej niż w rzeczywistości. 15 s lotu przez bramki = 1 s obliczeń.</p></div>
+    <div class="karta niebieska"><h3>🧬 Tysiące kopii naraz</h3><p>Na karcie graficznej można symulować tysiące robotów równolegle i uczyć je metodą prób i błędów.</p></div>
+    <div class="karta niebieska"><h3>🔁 Powtarzalnie</h3><p>Ten sam wiatr, te same zakłócenia, więc możemy uczciwie porównać dwa regulatory.</p></div>
+    <div class="karta niebieska"><h3>🔍 Widać wszystko</h3><p>Znamy <i>prawdziwą</i> pozycję i siły. W realnym świecie trzeba je dopiero zmierzyć.</p></div>
+  </div>
+</section>
+
+<!-- ============================================================ 8 -->
+<section>
+  <h2>Symulacja kłamie: problem <span style="color:var(--akcent)">sim2real</span></h2>
+  <div class="kolumny">
+    <div>
+      <h3>Czego model nie wie dokładnie?</h3>
+      <ul class="male">
+        <li>tarcie i poślizg</li>
+        <li>dokładna masa i środek ciężkości</li>
+        <li>opóźnienia silników i czujników</li>
+        <li>szum: kamera, żyroskop, GPS</li>
+        <li>oświetlenie, odbicia, rozmycie obrazu</li>
+        <li>podmuchy wiatru, powietrze odbite od ziemi</li>
+        <li>słabnąca bateria</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Co z tym robimy?</h3>
+      <div class="ramka n"><b>Lepszy model:</b> mierzymy prawdziwego robota i poprawiamy parametry.</div>
+      <div class="ramka n"><b>Zakłócenia celowo:</b> szum, wiatr, „kopnięcia” - regulator musi sobie z nimi radzić.</div>
+      <div class="ramka n"><b>Randomizacja domeny:</b> za każdym razem trochę inny świat.</div>
+      <p class="male" style="margin-top:14px">U nas: <span class="tag">wiatr</span><span class="tag">kopnięcia</span><span class="tag">szum kamery</span><span class="tag">gubienie klatek</span></p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 9 -->
+<section>
+  <h2>Randomizacja domeny</h2>
+  <img src="media/randomizacja.png" alt="Ta sama scena w czterech wersjach oświetlenia i kolorów" style="max-height:470px; display:block; margin:0 auto">
+  <p class="srodek-tekst" style="margin-top:14px">Uczymy na wielu wersjach świata, więc prawdziwy świat jest <em>po prostu kolejną wersją</em>.</p>
+</section>
+
+<!-- ============================================================ 10 -->
+<section>
+  <h2>Symulatory, których naprawdę się używa</h2>
+  <div class="kolumny" style="gap:18px">
+    <div class="karta akcent">
+      <h3>MuJoCo <span class="tag">Google DeepMind</span><span class="tag z">tego używamy</span></h3>
+      <p>Szybka i dokładna fizyka kontaktów: chwytanie, chodzenie. Open source od 2022. Standard w badaniach nad sterowaniem i uczeniem robotów. Wersje na GPU: MJX, MuJoCo Warp.</p>
+    </div>
+    <div class="karta zielona">
+      <h3>Isaac Sim / Isaac Lab <span class="tag z">NVIDIA</span></h3>
+      <p>Fotorealistyczna grafika i tysiące robotów naraz na karcie graficznej. Do trenowania robotów chodzących i generowania danych do uczenia widzenia. Wymaga mocnej karty NVIDIA.</p>
+    </div>
+    <div class="karta niebieska">
+      <h3>Gazebo <span class="tag n">Open Robotics</span></h3>
+      <p>Klasyka świata ROS. Roboty mobilne, czujniki (lidar, kamery, GPS). Ten sam program steruje robotem w symulacji i na żywo.</p>
+    </div>
+    <div class="karta fioletowa">
+      <h3>Genesis <span class="tag f">od 2024</span></h3>
+      <p>Nowy projekt kilkunastu uczelni. W całości w Pythonie, nastawiony na ogromną szybkość na GPU. Oprócz brył sztywnych liczy też materiały miękkie i ciecze.</p>
+    </div>
+  </div>
+  <p class="male szary" style="margin-top:14px">Inne: PyBullet (prosty, kiedyś bardzo popularny w uczeniu robotów), Webots (edukacja), CoppeliaSim, AirSim (drony, rozwój zakończony).</p>
+</section>
+
+<!-- ============================================================ 11 -->
+<section>
+  <h2>Który wybrać?</h2>
+  <table>
+    <thead><tr><th>Chcę…</th><th>Sięgam po…</th></tr></thead>
+    <tbody>
+      <tr><td>nauczyć czworonoga chodzić (uczenie ze wzmocnieniem, tysiące prób)</td><td><b>Isaac Lab</b>, MuJoCo (MJX / Warp), Genesis</td></tr>
+      <tr><td>zbudować robota mobilnego z ROS: mapa, nawigacja, lidar</td><td><b>Gazebo</b></td></tr>
+      <tr><td>badać sterowanie, chwytanie, kontakt z otoczeniem</td><td><b>MuJoCo</b></td></tr>
+      <tr><td>wygenerować realistyczne zdjęcia do uczenia sieci neuronowej</td><td><b>Isaac Sim</b></td></tr>
+      <tr><td>zacząć szybko na zwykłym laptopie, w Pythonie</td><td><b>MuJoCo</b>, PyBullet</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============================================================ 12 -->
+<section>
+  <h2>ROS: układ nerwowy robota</h2>
+  <div class="kolumny szeroka-prawa">
+    <div class="male">
+      <p><b>ROS</b> (Robot Operating System) to nie system operacyjny, tylko zestaw bibliotek i narzędzi do łączenia programów robota.</p>
+      <ul>
+        <li><b>węzeł</b> (node): osobny program, który robi jedną rzecz</li>
+        <li><b>temat</b> (topic): kanał, na który węzły <i>publikują</i> wiadomości i z którego inne je <i>czytają</i></li>
+        <li>gotowe klocki: nawigacja (Nav2), ruch ramion (MoveIt), podgląd (RViz)</li>
+        <li>aktualna wersja to <b>ROS 2</b></li>
+      </ul>
+    </div>
+    <div>
+      <svg class="diagram" viewBox="0 0 720 360">
+        <defs><marker id="g2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#5f6b7a"/></marker></defs>
+        <g font-size="18" font-weight="700">
+          <rect x="10" y="30" width="150" height="60" rx="30" fill="#e7f5ff" stroke="#1c7ed6" stroke-width="2.5"/><text x="85" y="66" text-anchor="middle">kamera</text>
+          <rect x="10" y="230" width="150" height="60" rx="30" fill="#e7f5ff" stroke="#1c7ed6" stroke-width="2.5"/><text x="85" y="266" text-anchor="middle">żyroskop</text>
+          <rect x="280" y="30" width="170" height="60" rx="30" fill="#fff4eb" stroke="#e8590c" stroke-width="2.5"/><text x="365" y="66" text-anchor="middle">detektor ArUco</text>
+          <rect x="280" y="130" width="170" height="60" rx="30" fill="#fff4eb" stroke="#e8590c" stroke-width="2.5"/><text x="365" y="166" text-anchor="middle">filtr Kalmana</text>
+          <rect x="540" y="130" width="170" height="60" rx="30" fill="#fff4eb" stroke="#e8590c" stroke-width="2.5"/><text x="625" y="166" text-anchor="middle">regulator</text>
+          <rect x="540" y="270" width="170" height="60" rx="30" fill="#ebfbee" stroke="#2b8a3e" stroke-width="2.5"/><text x="625" y="306" text-anchor="middle">silniki</text>
+        </g>
+        <g stroke="#5f6b7a" stroke-width="2.5" fill="none" marker-end="url(#g2)">
+          <path d="M160,60 L275,60"/><path d="M365,90 L365,125"/><path d="M450,160 L535,160"/><path d="M625,190 L625,265"/><path d="M160,255 Q560,250 585,195"/>
+        </g>
+        <g font-size="15" font-family="ui-monospace, Menlo, monospace" fill="#5f6b7a">
+          <text x="170" y="50">/obraz</text><text x="375" y="115">/markery</text><text x="455" y="150">/pozycja</text>
+          <text x="635" y="235">/silniki</text><text x="250" y="240">/imu</text>
+        </g>
+      </svg>
+      <p class="podpis">Węzły (owale) rozmawiają przez tematy (napisy przy strzałkach). Przykład dla naszego drona z dnia 3.</p>
+    </div>
+  </div>
+  <div class="ramka z male">Na warsztatach <b>nie</b> używamy ROS (instalacja trwa długo i wymaga Linuksa), ale nasz kod ma tę samą budowę: <code>wizja.py</code> → <code>kalman.py</code> → <code>kontroler.py</code> → silniki. W ROS ten sam węzeł działa z Gazebo i z prawdziwym robotem.</div>
+</section>
+
+<!-- ============================================================ 13 -->
+<section>
+  <h2>Dlaczego u nas MuJoCo?</h2>
+  <div class="kolumny srodek">
+    <ul>
+      <li>instalacja jednym poleceniem, działa na każdym laptopie, także bez karty graficznej</li>
+      <li>dokładna, szybka fizyka</li>
+      <li>prosty Python: kilka linijek i robot się rusza</li>
+      <li>używany w prawdziwych badaniach</li>
+      <li>gotowe modele robotów (MuJoCo Menagerie): nasz dron to <b>Skydio X2</b> stamtąd</li>
+    </ul>
+    <div>
+      <img src="media/scena_dron.png" alt="Dron Skydio X2 w MuJoCo">
+      <p class="podpis">Skydio X2 w MuJoCo: 1,3 kg, 4 śmigła, każde do 13 N ciągu.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 14 -->
+<section>
+  <h2>Jak będziemy pracować</h2>
+  <div class="kolumny">
+    <pre><code class="language-plaintext" data-trim>
+moj_kod/     ← TU PISZESZ
+  pid.py  kontroler.py  transformacje.py
+  wizja.py  kalman.py
+dzien1/  dzien2/  dzien3/   ← zadania
+testy/       ← sprawdź swój kod
+narzedzia/   ← symulatory (można czytać)
+wyniki/      ← tu lądują wykresy
+    </code></pre>
+    <div class="male">
+      <p>Uruchamianie zadania:</p>
+      <pre><code class="language-bash" data-trim>
+uv run python dzien1/z4_wysokosc.py
+uv run mjpython dzien1/z4_wysokosc.py   # macOS
+      </code></pre>
+      <ul>
+        <li><code>--bez-okna</code>: szybko, na końcu wykres</li>
+        <li>opis zadania jest na górze każdego pliku</li>
+        <li>★ = zadanie dodatkowe dla chętnych</li>
+        <li>utknąłeś? Pytaj! Są gotowe „punkty kontrolne”</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 15 -->
+<section>
+  <h2>Sprawdźmy, czy wszystko działa</h2>
+  <pre><code class="language-bash" data-trim>
+uv run python sprawdz_instalacje.py      # Linux, Windows
+uv run mjpython sprawdz_instalacje.py    # macOS
+  </code></pre>
+  <p>Na końcu powinno być: <b>Wszystko gotowe! :)</b></p>
+  <div class="ramka">Coś nie działa? Podnieś rękę i pokaż wynik. Nie walczcie sami dłużej niż 5 minut.</div>
+  <div class="odstep"></div>
+  <p class="szary">Za chwilę: <b>MuJoCo od środka</b>, czyli jak zbudować robota z klocków.</p>
+</section>
+
+</div></div>
+<script src="lib/reveal/reveal.js"></script>
+<script>window.RevealNotes = { id: "notes", init() {} };</script>
+<script src="lib/reveal/plugin/math/math.js"></script>
+<script src="lib/reveal/plugin/highlight/highlight.js"></script>
+<script src="wspolne/slajdy.js"></script>
+<script>uruchomSlajdy();</script>
+</body>
+</html>

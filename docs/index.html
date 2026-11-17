@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Robotyka i symulacje robotów</title>
+  <link rel="stylesheet" href="wspolne/motyw.css">
+  <style>
+    html, body { background: #fff; }
+    body { font-family: var(--font); color: var(--tekst); margin: 0; padding: 48px 16px; overflow-wrap: anywhere; }
+    main { max-width: 860px; margin: 0 auto; }
+    h1 { font-size: clamp(30px, 6vw, 40px); margin: 0 0 6px; }
+    h1::after { content: ""; display: block; width: 80px; height: 6px; background: var(--akcent); border-radius: 3px; margin-top: 14px; }
+    h2 { font-size: 22px; margin: 40px 0 8px; }
+    .podtytul { color: var(--szary); margin: 14px 0 0; }
+    .pobierz { display: inline-block; margin-top: 26px; background: var(--akcent); color: #fff; text-decoration: none;
+               font-weight: 700; font-size: 20px; padding: 14px 26px; border-radius: 12px; }
+    .pobierz:hover { filter: brightness(1.08); }
+    .pobierz small { display: block; font-weight: 400; font-size: 14px; opacity: .9; margin-top: 2px; }
+    .dzien { margin-top: 26px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--akcent); font-size: 15px; }
+    .wyklad { display: block; text-decoration: none; color: inherit; border: 1px solid var(--linia); border-radius: 12px;
+              padding: 16px 20px; margin-top: 10px; background: #fff; }
+    a.wyklad:hover { border-color: var(--akcent); }
+    .wyklad b { font-size: 22px; }
+    .wyklad span { display: block; color: var(--szary); margin-top: 4px; }
+    .brak { opacity: .45; }
+    ol { line-height: 1.7; padding-left: 22px; }
+    pre { background: var(--kod-tlo); border: 1px solid var(--linia); border-radius: 8px; padding: 8px 12px; overflow-x: auto;
+          font-family: var(--mono); font-size: 14px; margin: 4px 0 8px; }
+    code { font-family: var(--mono); background: var(--kod-tlo); border-radius: 4px; padding: 0 4px; }
+    pre code { background: none; padding: 0; }
+    .wskazowki { margin-top: 36px; color: var(--szary); font-size: 15px; line-height: 1.6; }
+    kbd { font-family: var(--mono); background: var(--kod-tlo); border: 1px solid var(--linia); border-radius: 4px; padding: 0 5px; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Robotyka i symulacje robotów</h1>
+  <p class="podtytul">Symulator fizyki MuJoCo, regulatory PID, kamery i markery ArUco, filtr Kalmana.</p>
+
+  <a class="pobierz" href="https://github.com/PiotrJunior/warsztaty-robotyka/raw/main/warsztaty-robotyka.zip">⬇ Pobierz zadania<small>warsztaty-robotyka.zip</small></a>
+
+  <h2>Instalacja</h2>
+  <ol>
+    <li>Zainstaluj <b>uv</b>. Na Linuksie i macOS w terminalu:
+      <pre><code>curl -LsSf https://astral.sh/uv/install.sh | sh</code></pre>
+      Na Windowsie w PowerShellu:
+      <pre><code>powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"</code></pre></li>
+    <li>Zamknij i otwórz terminal ponownie. Rozpakuj paczkę, wejdź do jej folderu i wpisz <code>uv sync</code>.</li>
+    <li>Sprawdź instalację: <code>uv run python sprawdz_instalacje.py</code> (na macOS: <code>uv run mjpython sprawdz_instalacje.py</code>).
+      Na końcu powinno być <b>Wszystko gotowe! :)</b></li>
+  </ol>
+  <p>Więcej, w tym co zrobić, gdy coś nie działa, znajdziesz w pliku <code>README.md</code> w paczce.</p>
+  <p>Rano dnia 2 dobierz nowe zadania: w folderze warsztatów wpisz <code>uv run python pobierz_dzien.py 2</code>. Twój kod zostanie nietknięty.</p>
+
+  <h2>Wykłady</h2>
+  <div class="dzien">Dzień 1 · MuJoCo i PID</div>
+  <a class="wyklad" href="w1_wstep.html"><b>W1 · Wstęp do robotyki</b><span>czuj–myśl–działaj, po co symulacja, sim2real, przegląd symulatorów, ROS</span></a>
+  <a class="wyklad" href="w2_mujoco.html"><b>W2 · MuJoCo od środka</b><span>MJCF, drzewo ciał, przeguby, silniki, MjModel i MjData, krok czasowy</span></a>
+  <a class="wyklad" href="w3_pid.html"><b>W3 · Regulator PID</b><span>wyzwanie pilota, P, I i D krok po kroku, strojenie, jak lata dron, kaskada</span></a>
+  <div class="dzien">Dzień 2 · lot, kamery, ArUco</div>
+  <div class="wyklad brak"><b>W4 · Kamery i transformacje</b><span>pojawi się rano dnia 2</span></div>
+  <div class="dzien">Dzień 3 · filtr Kalmana, dron bez GPS</div>
+  <div class="wyklad brak"><b>W5 · Filtr Kalmana</b><span>pojawi się rano dnia 3</span></div>
+
+  <div class="wskazowki">
+    <b>Sterowanie:</b> <kbd>→</kbd>/<kbd>←</kbd> slajdy · <kbd>F</kbd> pełny ekran · <kbd>Esc</kbd> przegląd slajdów.
+    Dema na slajdach są interaktywne: ruszaj suwakami.<br>
+    <a href="https://github.com/PiotrJunior/warsztaty-robotyka">Repozytorium na GitHubie</a>
+  </div>
+</main>
+</body>
+</html>

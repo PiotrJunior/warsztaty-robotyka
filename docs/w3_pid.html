@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>W3 · Regulator PID</title>
+  <link rel="stylesheet" href="lib/reveal/reset.css">
+  <link rel="stylesheet" href="lib/reveal/reveal.css">
+  <link rel="stylesheet" href="lib/reveal/plugin/highlight/monokai.css">
+  <link rel="stylesheet" href="wspolne/motyw.css">
+  <style>.reveal h2 { margin-bottom: 12px; } .reveal h2::after { margin-top: 8px; }</style>
+</head>
+<body>
+<div class="reveal"><div class="slides">
+
+<!-- ============================================================ 1 -->
+<section class="tytul">
+  <div class="numer">Wykład 3 · Dzień 1</div>
+  <h1>Regulator PID</h1>
+  <div class="podtytul">Jak sprawić, żeby dron wisiał tam, gdzie chcemy</div>
+</section>
+
+<!-- ============================================================ 2 -->
+<section>
+  <h2>Wyzwanie pilota</h2>
+  <p class="male" style="margin-bottom:8px">Ty jesteś regulatorem. Utrzymaj drona w zielonym pasie (±10 cm) suwakiem ciągu. Cel zmienia się co 6 s.</p>
+  <div id="demo-pilot"></div>
+</section>
+
+<!-- ============================================================ 3 -->
+<section>
+  <h2>Co było trudne?</h2>
+  <div class="kolumny srodek">
+    <ul>
+      <li>ciągle trzeba <b>patrzeć</b> i <b>poprawiać</b></li>
+      <li>dron ma <b>bezwładność</b>: reaguje z opóźnieniem</li>
+      <li>trzeba <b>przewidywać</b> i hamować wcześniej</li>
+      <li>nie wiadomo, ile ciągu potrzeba, żeby po prostu wisieć</li>
+    </ul>
+    <div class="karta akcent">
+      <p class="duze" style="margin:0">Robot musi robić to sam,<br><span style="color:var(--akcent)">100 razy na sekundę</span>,<br>w 3 osiach i 3 obrotach naraz.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 4 -->
+<section>
+  <h2>Dron bez regulatora</h2>
+  <div class="kolumny szeroka-lewa srodek">
+    <video class="film" src="media/bez_regulatora.mp4" data-autoplay muted loop playsinline></video>
+    <div>
+      <p>Każde śmigło daje dokładnie tyle, ile trzeba do zawisu: <b>4 × 3,25 N = m·g</b>.</p>
+      <p>Wystarczy jedno małe „kopnięcie”…</p>
+      <p class="szary male">Nikt nie poprawia przechyłu, więc ciąg zaczyna pchać w bok, a dron spada.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 5 -->
+<section>
+  <h2>Sprzężenie zwrotne</h2>
+  <svg class="diagram" viewBox="0 0 1200 330">
+    <defs><marker id="s5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#1d2433"/></marker></defs>
+    <g stroke="#1d2433" stroke-width="3" fill="none" marker-end="url(#s5)">
+      <path d="M40,110 L195,110"/><path d="M265,110 L405,110"/><path d="M645,110 L775,110"/><path d="M1005,110 L1160,110"/>
+      <path d="M1100,110 L1100,250 L230,250 L230,150"/>
+    </g>
+    <circle cx="230" cy="110" r="34" fill="#fff" stroke="#1d2433" stroke-width="3"/>
+    <text x="230" y="120" text-anchor="middle" font-size="30">−</text>
+    <rect x="410" y="60" width="235" height="100" rx="14" fill="#fff4eb" stroke="#e8590c" stroke-width="3"/>
+    <text x="527" y="105" text-anchor="middle" font-size="26" font-weight="800" fill="#e8590c">REGULATOR</text>
+    <text x="527" y="135" text-anchor="middle" font-size="19">(nasz kod)</text>
+    <rect x="780" y="60" width="225" height="100" rx="14" fill="#e7f5ff" stroke="#1c7ed6" stroke-width="3"/>
+    <text x="892" y="105" text-anchor="middle" font-size="26" font-weight="800" fill="#1c7ed6">DRON</text>
+    <text x="892" y="135" text-anchor="middle" font-size="19">(fizyka)</text>
+    <g font-size="21">
+      <text x="40" y="95">cel</text><text x="40" y="150" fill="#5f6b7a" font-size="17">np. 1,0 m</text>
+      <text x="285" y="95">błąd e</text><text x="285" y="150" fill="#5f6b7a" font-size="17">cel − pomiar</text>
+      <text x="660" y="95">sterowanie</text><text x="660" y="150" fill="#5f6b7a" font-size="17">ciąg [N]</text>
+      <text x="1030" y="95">wysokość</text>
+      <text x="560" y="285" text-anchor="middle">pomiar (czujnik)</text>
+    </g>
+  </svg>
+  <div class="kolumny k3 male" style="margin-top:6px">
+    <div class="ramka n">🚿 prysznic: za zimno → kręcę w stronę ciepłej</div>
+    <div class="ramka n">🚗 tempomat: za wolno → więcej gazu</div>
+    <div class="ramka n">🌡️ termostat: za zimno → grzej</div>
+  </div>
+</section>
+
+<!-- ============================================================ 6 -->
+<section>
+  <h2>Pomysł 1: włącz / wyłącz</h2>
+  <p class="male" style="margin-bottom:8px">Za nisko → pełny ciąg. Za wysoko → silniki stop. Tak działa termostat w piekarniku.</p>
+  <div id="demo-wlwyl"></div>
+</section>
+
+<!-- ============================================================ 7 -->
+<section>
+  <h2>Pomysł 2: <span style="color:var(--czerwony)">P</span>, czyli im dalej, tym mocniej</h2>
+  <p class="male" style="margin-bottom:8px">Ciąg = <b>kp · błąd</b>. Działa jak sprężyna przyczepiona do celu.</p>
+  <div id="demo-p"></div>
+</section>
+
+<!-- ============================================================ 8 -->
+<section>
+  <h2>Pomysł 3: <span style="color:var(--akcent)">feedforward</span>, czyli wiemy z góry, ile trzeba</h2>
+  <p class="male" style="margin-bottom:8px">Ciąg = <b>m·g</b> + kp · błąd. Do wiszenia potrzeba 13 N, więc dajmy je od razu. P zajmie się tylko poprawkami.</p>
+  <div id="demo-ff"></div>
+</section>
+
+<!-- ============================================================ 9 -->
+<section>
+  <h2>Pomysł 4: <span style="color:var(--niebieski)">D</span>, czyli hamulec</h2>
+  <p class="male" style="margin-bottom:8px"><b>kd · (jak szybko zmienia się błąd)</b>. Gdy dron szybko zbliża się do celu, D hamuje, zanim go przestrzeli.</p>
+  <div id="demo-d"></div>
+</section>
+
+<!-- ============================================================ 10 -->
+<section>
+  <h2>Pomysł 5: <span style="color:var(--zielony)">I</span>, czyli pamięć</h2>
+  <p class="male" style="margin-bottom:8px">Dron wiezie paczkę i jest cięższy, więc feedforward się myli. <b>ki · (suma błędów w czasie)</b> rośnie, dopóki błąd nie zniknie.</p>
+  <div id="demo-i"></div>
+</section>
+
+<!-- ============================================================ 11 -->
+<section>
+  <h2>Regulator PID</h2>
+  <p style="font-size:34px">$$u(t) = \color{#c92a2a}{k_p\, e(t)} \;+\; \color{#2b8a3e}{k_i \int_0^t e\,d\tau} \;+\; \color{#1c7ed6}{k_d\, \frac{de}{dt}}$$</p>
+  <div class="kolumny k3">
+    <div class="karta czerwona"><h3>P: teraźniejszość</h3><p>Jak daleko jestem <b>teraz</b>?</p></div>
+    <div class="karta zielona"><h3>I: przeszłość</h3><p>Jak długo i jak bardzo się <b>myliłem</b>?</p></div>
+    <div class="karta niebieska"><h3>D: przyszłość</h3><p>Dokąd zmierzam, czyli jak szybko zmienia się błąd?</p></div>
+  </div>
+  <div class="ramka n male" style="margin-top:16px">
+    W komputerze co krok \(\Delta t\): &nbsp; suma \(\leftarrow\) suma \(+\; e\cdot\Delta t\) &nbsp;|&nbsp; zmiana \(= (e - e_{\text{poprzedni}})/\Delta t\) &nbsp;|&nbsp; trzeba <b>pamiętać</b> sumę i poprzedni błąd.
+  </div>
+</section>
+
+<!-- ============================================================ 12 -->
+<section>
+  <h2>Plac zabaw: wszystko naraz</h2>
+  <div id="demo-pid"></div>
+</section>
+
+<!-- ============================================================ 13 -->
+<section>
+  <h2>Jak ocenić regulator?</h2>
+  <div class="kolumny szeroka-lewa srodek">
+    <svg class="diagram" viewBox="0 0 700 380">
+      <rect x="70" y="105" width="610" height="40" fill="rgba(43,138,62,.12)"/>
+      <line x1="70" y1="125" x2="680" y2="125" stroke="#2b8a3e" stroke-width="2" stroke-dasharray="8 6"/>
+      <line x1="70" y1="330" x2="680" y2="330" stroke="#868e96" stroke-width="2"/>
+      <line x1="70" y1="20" x2="70" y2="330" stroke="#868e96" stroke-width="2"/>
+      <path d="M70,330 C150,330 160,60 230,62 C290,64 300,150 350,140 C390,132 410,118 450,123 C520,128 600,126 680,126" stroke="#e8590c" stroke-width="4" fill="none"/>
+      <line x1="230" y1="62" x2="230" y2="125" stroke="#c92a2a" stroke-width="3"/>
+      <text x="240" y="85" font-size="20" fill="#c92a2a" font-weight="700">przeregulowanie</text>
+      <line x1="372" y1="40" x2="372" y2="330" stroke="#1c7ed6" stroke-width="2.5" stroke-dasharray="5 5"/>
+      <text x="380" y="300" font-size="20" fill="#1c7ed6" font-weight="700">czas ustalania</text>
+      <text x="560" y="100" font-size="18" fill="#2b8a3e">cel ± 5 cm</text>
+      <text x="600" y="160" font-size="18" fill="#5f6b7a">błąd ustalony</text>
+      <text x="80" y="355" font-size="17" fill="#5f6b7a">skok celu</text><text x="640" y="355" font-size="17" fill="#5f6b7a">czas</text>
+    </svg>
+    <div class="male">
+      <p><b class="" style="color:var(--czerwony)">Przeregulowanie</b>: o ile przestrzelił cel.</p>
+      <p><b style="color:var(--niebieski)">Czas ustalania</b>: po jakim czasie wchodzi w pas ±5 cm i już z niego nie wychodzi.</p>
+      <p><b style="color:var(--zielony)">Błąd ustalony</b>: ile brakuje na końcu.</p>
+      <div class="ramka">Te same liczby wypisuje terminal po zadaniu 1.4 i pokazują dema.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 14 -->
+<section>
+  <h2>Jak stroić krok po kroku</h2>
+  <div class="kolumny">
+    <ol class="male">
+      <li>Dodaj <b>feedforward</b>, jeśli wiesz, ile trzeba (m·g).</li>
+      <li>Zwiększaj <b style="color:var(--czerwony)">kp</b>, aż reakcja będzie szybka, nawet z bujaniem.</li>
+      <li>Dodawaj <b style="color:var(--niebieski)">kd</b>, aż bujanie zniknie.</li>
+      <li>Jeśli zostaje błąd ustalony, dodaj trochę <b style="color:var(--zielony)">ki</b>.</li>
+      <li>Patrz na <b>wykres</b>, nie tylko na drona!</li>
+    </ol>
+    <table style="font-size:21px">
+      <thead><tr><th>Gdy zwiększam…</th><th>szybkość</th><th>przeregulowanie</th><th>błąd ustalony</th></tr></thead>
+      <tbody>
+        <tr><td><b style="color:var(--czerwony)">kp</b></td><td>↑</td><td>↑</td><td>↓</td></tr>
+        <tr><td><b style="color:var(--zielony)">ki</b></td><td>↑</td><td>↑</td><td>znika</td></tr>
+        <tr><td><b style="color:var(--niebieski)">kd</b></td><td>≈</td><td>↓</td><td>≈</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ============================================================ 15 -->
+<section>
+  <h2>Pułapki</h2>
+  <div class="kolumny k3">
+    <div class="karta czerwona">
+      <h3>Nasycenie</h3>
+      <p>Silnik ma swoje maksimum (13 N na śmigło). Regulator może „chcieć” 100 N, ale ich nie dostanie.</p>
+      <p class="szary bmale">W kodzie: <code>output_limits</code></p>
+    </div>
+    <div class="karta zielona">
+      <h3>Nakręcanie się całki</h3>
+      <p>Gdy silnik jest na maksimum, a błąd duży, całka rośnie bez końca, a potem długo „schodzi”. Rozwiązanie: nie zbieraj całki, gdy wyjście jest nasycone (anti-windup).</p>
+    </div>
+    <div class="karta niebieska">
+      <h3>Szum i D</h3>
+      <p>Pomiar skacze o 2 cm w 0,01 s? Dla D to 2 m/s! Duże kd + zaszumiony czujnik = szalejące silniki.</p>
+      <p class="szary bmale">Wrócimy do tego w dniu 3 (filtr Kalmana).</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 16 -->
+<section>
+  <h2>Jak lata kwadrokopter?</h2>
+  <div class="kolumny" style="grid-template-columns: minmax(0, 1fr) minmax(0, 1.9fr); gap:20px">
+    <div class="male">
+      <ul>
+        <li><b>ciąg</b>: wszystkie śmigła razem</li>
+        <li><b>roll / pitch</b> (przechył): jedna strona mocniej, druga słabiej</li>
+        <li><b>yaw</b> (obrót): śmigła kręcą się w przeciwne strony; gdy jedna para kręci szybciej, dron obraca się w przeciwną stronę</li>
+        <li><b>ruch w bok</b>: przechylony dron „pcha” trochę w bok</li>
+      </ul>
+      <p class="szary bmale">Przyjęliśmy: dodatni pitch → +x, dodatni roll → −y. Yaw zawsze trzymamy na 0.</p>
+    </div>
+    <div id="demo-mikser"></div>
+  </div>
+</section>
+
+<!-- ============================================================ 17 -->
+<section>
+  <h2>Kaskada: regulator w regulatorze</h2>
+  <svg class="diagram" viewBox="0 0 1200 380">
+    <defs><marker id="s17" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#1d2433"/></marker></defs>
+    <rect x="360" y="38" width="790" height="180" rx="18" fill="none" stroke="#adb5bd" stroke-width="2" stroke-dasharray="8 6"/>
+    <text x="755" y="30" text-anchor="middle" font-size="16" fill="#5f6b7a">pętla wewnętrzna: szybka (IMU, setki razy na sekundę)</text>
+    <g stroke="#1d2433" stroke-width="3" fill="none" marker-end="url(#s17)">
+      <path d="M10,110 L85,110"/><path d="M250,110 L380,110"/><path d="M560,110 L690,110"/><path d="M835,110 L950,110"/>
+      <path d="M1100,110 L1190,110"/>
+      <path d="M1125,110 L1125,190 L470,190 L470,155"/>
+      <path d="M1170,110 L1170,345 L168,345 L168,155"/>
+      <path d="M410,290 L765,290 L765,155"/><path d="M305,345 L305,323"/>
+    </g>
+    <g font-size="21" font-weight="800">
+      <rect x="90" y="70" width="160" height="80" rx="12" fill="#fff4eb" stroke="#e8590c" stroke-width="3"/><text x="170" y="105" text-anchor="middle" fill="#e8590c">PID</text><text x="170" y="132" text-anchor="middle" font-size="17" font-weight="600">pozycji x, y</text>
+      <rect x="385" y="70" width="175" height="80" rx="12" fill="#fff4eb" stroke="#e8590c" stroke-width="3"/><text x="472" y="105" text-anchor="middle" fill="#e8590c">PID</text><text x="472" y="132" text-anchor="middle" font-size="17" font-weight="600">kąta roll, pitch</text>
+      <rect x="695" y="70" width="140" height="80" rx="12" fill="#f1f3f5" stroke="#343a40" stroke-width="3"/><text x="765" y="118" text-anchor="middle">mikser</text>
+      <rect x="955" y="70" width="145" height="80" rx="12" fill="#e7f5ff" stroke="#1c7ed6" stroke-width="3"/><text x="1027" y="118" text-anchor="middle" fill="#1c7ed6">DRON</text>
+      <rect x="200" y="262" width="210" height="56" rx="12" fill="#fff4eb" stroke="#e8590c" stroke-width="3"/><text x="305" y="297" text-anchor="middle" fill="#e8590c" font-size="18">PID wysokości + m·g</text>
+    </g>
+    <g font-size="16" text-anchor="middle">
+      <text x="45" y="98">cel x, y</text><text x="100" y="282">cel z</text>
+      <text x="315" y="98">zadany kąt</text><text x="625" y="98">różnice ciągu</text><text x="892" y="98">4 śmigła</text>
+      <text x="590" y="280">ciąg</text>
+      <text x="560" y="210" fill="#5f6b7a">kąty (IMU)</text><text x="560" y="368" fill="#5f6b7a">pozycja (GPS, a w dniu 3: kamera)</text>
+    </g>
+    <path d="M10,290 L195,290" stroke="#1d2433" stroke-width="3" marker-end="url(#s17)"/>
+  </svg>
+  <p class="male">Pętla pozycji mówi: „przechyl się o 10° w prawo”. Pętla kąta pilnuje, żeby dron <b>naprawdę</b> się tak przechylił.</p>
+</section>
+
+<!-- ============================================================ 18 -->
+<section>
+  <h2>Kaskada w akcji (widok z boku)</h2>
+  <div id="demo-kaskada"></div>
+</section>
+
+<!-- ============================================================ 19 -->
+<section>
+  <h2>Zadania 1.4 – 1.5</h2>
+  <div class="kolumny">
+    <div class="karta akcent">
+      <h3>1.4 Regulator wysokości</h3>
+      <ol class="male">
+        <li>Napisz klasę <code>PID</code> w <code>moj_kod/pid.py</code></li>
+        <li>Sprawdź: <code>uv run python testy/test_pid.py</code></li>
+        <li><code>altitude()</code> w <code>moj_kod/kontroler.py</code></li>
+        <li>Uruchom <code>dzien1/z4_wysokosc.py</code> i dobierz kp, ki, kd</li>
+      </ol>
+    </div>
+    <div class="karta niebieska">
+      <h3>1.5 Stabilizacja</h3>
+      <ol class="male">
+        <li><code>attitude()</code>: PID dla roll, pitch, yaw</li>
+        <li>Uruchom <code>dzien1/z5_stabilizacja.py</code>: drona ktoś kopie!</li>
+        <li>Jakie jest największe przechylenie?</li>
+        <li>★ Włącz wiatr</li>
+      </ol>
+    </div>
+  </div>
+  <div class="ramka male" style="margin-top:16px">Konkurs: najmniejsze przeregulowanie w 1.4 przy czasie ustalania poniżej 2 s. Wyniki wypisuje terminal.</div>
+</section>
+
+</div></div>
+<script src="lib/reveal/reveal.js"></script>
+<script>window.RevealNotes = { id: "notes", init() {} };</script>
+<script src="lib/reveal/plugin/math/math.js"></script>
+<script src="lib/reveal/plugin/highlight/highlight.js"></script>
+<script src="wspolne/slajdy.js"></script>
+<script src="wspolne/dema_pid.js"></script>
+<script>
+  Dema.dodaj("#demo-pilot", (el) => demoWysokosc(el, { tryb: "pilot", cele: [1.0, 1.5, 0.7, 1.2, 0.5], okres: 6 }));
+  Dema.dodaj("#demo-wlwyl", (el) => demoWysokosc(el, { tryb: "wlwyl", pokaz: ["kopnij"] }));
+  Dema.dodaj("#demo-p", (el) => demoWysokosc(el, { kp: 20, ki: 0, kd: 0, ff: false, pokaz: ["kp", "kopnij"] }));
+  Dema.dodaj("#demo-ff", (el) => demoWysokosc(el, { kp: 6, ki: 0, kd: 0, ff: false, pokaz: ["kp", "ff", "kopnij"] }));
+  Dema.dodaj("#demo-d", (el) => demoWysokosc(el, { kp: 6, ki: 0, kd: 0, ff: true, pokaz: ["kp", "kd", "ff", "kopnij"] }));
+  Dema.dodaj("#demo-i", (el) => demoWysokosc(el, { kp: 6, ki: 0, kd: 3, ff: true, pokaz: ["kp", "ki", "kd", "ff", "paczka"], cele: [1.0, 1.5] }));
+  Dema.dodaj("#demo-pid", (el) => demoWysokosc(el, { kp: 6, ki: 0, kd: 3, ff: true, pokaz: ["kp", "ki", "kd", "ff", "paczka", "szum", "kopnij"] }));
+  Dema.dodaj("#demo-mikser", (el) => demoMikser(el));
+  Dema.dodaj("#demo-kaskada", (el) => demoKaskada(el));
+  uruchomSlajdy();
+</script>
+</body>
+</html>
