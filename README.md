@@ -1,0 +1,19 @@
+# Warsztaty: robotyka i symulacje robotów
+
+Symulator fizyki **MuJoCo**, regulatory **PID**, kamery i markery **ArUco** (**OpenCV**), **filtr Kalmana**.
+
+## Dzień 1: pobierz paczkę
+
+**[⬇ warsztaty-robotyka.zip](https://github.com/PiotrJunior/warsztaty-robotyka/raw/main/warsztaty-robotyka.zip)**
+
+Rozpakuj ją i postępuj według pliku `README.md` w środku (instalacja przez `uv`, a potem `uv sync`).
+
+## Kolejne dni
+
+Rano, w folderze warsztatów, wpisz:
+
+```bash
+uv run python pobierz_dzien.py 2
+```
+
+(dnia 3: `uv run python pobierz_dzien.py 3`). Skrypt tylko dodaje nowe pliki, a Twojego kodu nie zmienia.
