@@ -19,3 +19,7 @@ uv run python pobierz_dzien.py 2
 ```
 
 (dnia 3: `uv run python pobierz_dzien.py 3`). Skrypt tylko dodaje nowe pliki, a Twojego kodu nie zmienia.
+
+## Rozwiązania
+
+- [1.3 · Chwytak z palcami](rozwiazania/dzien1/z3_chwytak.xml) (`dzien1/z3_chwytak.xml`)
