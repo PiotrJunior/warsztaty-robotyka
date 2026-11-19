@@ -403,11 +403,12 @@ corners, ids, rejected = detector.detectMarkers(gray)
     <div class="karta akcent">
       <h3>2.3 Kamera laptopa</h3>
       <ol class="male">
-        <li><code>detect_markers()</code> w <code>moj_kod/wizja.py</code></li>
-        <li><code>marker_pose()</code>: pojawią się osie i odległość</li>
+        <li>Pokaż marker: ramka, ID, osie, odległość (<code>wizja.py</code> jest gotowe)</li>
+        <li>Poruszaj markerem: jak zmieniają się x, y, z?</li>
         <li>Zmierz linijką. Zgadza się?</li>
         <li>★ Dobierz <code>FOV_DEG</code>, aż się zgadza (= kalibracja)</li>
         <li>★★ Odległość <b>między</b> dwoma markerami</li>
+        <li>★★★ Zamień kolejność rogów w <code>wizja.py</code>: co z osiami?</li>
       </ol>
       <p class="bmale szary">Wydruki: <code>materialy/markery_do_druku.pdf</code>. macOS: zezwól Terminalowi na kamerę.</p>
     </div>
@@ -420,6 +421,7 @@ corners, ids, rejected = detector.detectMarkers(gray)
         <li>★ kolejność ID, ★★ obrócone klocki, ★★★ 5 klocków</li>
         <li>★ własne <code>invert_transform</code> (<code>moj_kod/transformacje.py</code>)</li>
       </ol>
+      <p class="bmale szary">Wszystkie polecenia chwytaka (<code>g.move_to</code>, <code>g.grab</code>…) są w ściągawce na górze <code>dzien2/z4_wieza.py</code>.</p>
     </div>
   </div>
 </section>
