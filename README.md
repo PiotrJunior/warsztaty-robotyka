@@ -10,7 +10,14 @@ Symulator fizyki **MuJoCo**, regulatory **PID**, kamery i markery **ArUco** (**O
 
 Rozpakuj ją i postępuj według pliku `README.md` w środku (instalacja przez `uv`, a potem `uv sync`).
 
-## Kolejne dni
+## Dzień 2: paczka z rozwiązanym dniem 1
+
+**[⬇ warsztaty-robotyka-dzien2.zip](https://github.com/PiotrJunior/warsztaty-robotyka/raw/main/warsztaty-robotyka-dzien2.zip)**
+
+PID i sterownik drona z dnia 1 są w niej gotowe, a zadania dnia 2 czekają. Rozpakowuje się do nowego folderu
+`warsztaty-robotyka-dzien2`, więc stary kod zostaje. W nowym folderze wpisz `uv sync`.
+
+## Kolejne dni (na własnym kodzie)
 
 Rano, w folderze warsztatów, wpisz:
 
